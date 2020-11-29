@@ -12,7 +12,7 @@ int main(){
 
 	fun_primes(input, 34);
 
-    exit(0);
+    exit();
 }
 
 void fun_primes(int *input, int num) {
@@ -34,7 +34,7 @@ void fun_primes(int *input, int num) {
             temp = *(input + i);
 			write(p[1], (char *)(&temp), 4);
 		}
-        exit(0);
+        exit();
     }
 
 	close(p[1]);
@@ -51,9 +51,9 @@ void fun_primes(int *input, int num) {
 			}
 		}
 		fun_primes(input - count, count);
-		exit(0);
+		exit();
     }
 
-	wait(0);
-	wait(0);
+	wait();
+	wait();
 }

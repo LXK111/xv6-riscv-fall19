@@ -20,5 +20,5 @@ int main(){
         printf("%d: received %s\n", getpid(), buf);
     }
     
-	exit(0);
+	exit();
 }

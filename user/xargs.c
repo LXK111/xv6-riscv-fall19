@@ -10,7 +10,7 @@ int main(int argc, char *argv[])
 {
   if (argc < 2)
   {
-    exit(0);
+    exit();
   }
  
   // xarg的第一个参数 就是要执行的命令
@@ -54,12 +54,12 @@ int main(int argc, char *argv[])
       params[index]=0;
       exec(cmd, params);
       printf("exec fail!\n");
-      exit(0);
+      exit();
     }
     else
     {
-      wait(0);
+      wait();
     }
   }
-  exit(0);
+  exit();
 }

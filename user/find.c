@@ -70,8 +70,8 @@ void find(char *path, char *findName){
 int main(int argc, char *argv[]){
 	if(argc < 3){
 		printf("find: find <path> <fileName>\n");
-		exit(0);
+		exit();
 	}
 	find(argv[1], argv[2]);
-	exit(0);
+	exit();
 }
