@@ -1,6 +1,6 @@
 // Physical memory allocator, for user processes,
 // kernel stacks, page-table pages,
-// and pipe buffers. Allocates whole 4096-byte pages.
+// and pipe buffer. Allocates whole 4096-byte pages.
 
 #include "types.h"
 #include "param.h"
@@ -11,22 +11,26 @@
 
 void freerange(void *pa_start, void *pa_end);
 
-extern char end[]; // first address after kernel.
+extern char end[]; // firt address after kernel.
                    // defined by kernel.ld.
 
 struct run {
   struct run *next;
 };
 
-struct {
+struct kmem{
   struct spinlock lock;
   struct run *freelist;
-} kmem;
+};
+
+struct kmem kmem[3];
+
 
 void
 kinit()
 {
-  initlock(&kmem.lock, "kmem");
+  for(int i=0;i<3;i++)
+    initlock(&kmem[i].lock, "kmem");
   freerange(end, (void*)PHYSTOP);
 }
 
@@ -37,6 +41,14 @@ freerange(void *pa_start, void *pa_end)
   p = (char*)PGROUNDUP((uint64)pa_start);
   for(; p + PGSIZE <= (char*)pa_end; p += PGSIZE)
     kfree(p);
+}
+
+
+int getcpuid(){
+  push_off();
+  int cpu=cpuid();
+  pop_off();
+  return cpu;
 }
 
 // Free the page of physical memory pointed at by v,
@@ -54,14 +66,29 @@ kfree(void *pa)
   // Fill with junk to catch dangling refs.
   memset(pa, 1, PGSIZE);
 
+  int i = getcpuid();
   r = (struct run*)pa;
-
-  acquire(&kmem.lock);
-  r->next = kmem.freelist;
-  kmem.freelist = r;
-  release(&kmem.lock);
+  acquire(&kmem[i].lock);
+  r->next = kmem[i].freelist;
+  kmem[i].freelist = r;
+  release(&kmem[i].lock);
 }
 
+void *
+mydo(){
+  struct run * r=0;
+  for(int i = 0; i < 3; i++) {
+    acquire(&kmem[i].lock);
+    if(kmem[i].freelist!=0){
+      r=kmem[i].freelist;
+      kmem[i].freelist=r->next;
+      release(&kmem[i].lock);
+      return (void *)r;
+    }
+    release(&kmem[i].lock);
+  }
+  return (void *)r;
+}
 // Allocate one 4096-byte page of physical memory.
 // Returns a pointer that the kernel can use.
 // Returns 0 if the memory cannot be allocated.
@@ -69,14 +96,15 @@ void *
 kalloc(void)
 {
   struct run *r;
-
-  acquire(&kmem.lock);
-  r = kmem.freelist;
-  if(r)
-    kmem.freelist = r->next;
-  release(&kmem.lock);
-
-  if(r)
+  int i = getcpuid();
+  acquire(&kmem[i].lock);
+  r = kmem[i].freelist;
+  if (r)
+    kmem[i].freelist = r->next;
+  release(&kmem[i].lock);
+  if (!r)
+    r=mydo(i);
+  if (r)
     memset((char*)r, 5, PGSIZE); // fill with junk
   return (void*)r;
 }
