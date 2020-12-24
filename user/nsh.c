@@ -27,7 +27,7 @@ int main() {
     }
     exit(0);
 }
-
+//将当前命令存入缓冲字符串
 int getcmd(char *buf, int nbuf)
 {
     fprintf(2, "@ ");
